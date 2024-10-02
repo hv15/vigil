@@ -218,7 +218,7 @@ main section.general .general-inner p a {
   text-decoration: underline;
 }
 
-main section.announcement {
+main section.announcement, main section.announcement {
   margin-top: -5px;
   padding-top: 26px;
   padding-bottom: 21px;
@@ -255,6 +255,21 @@ main section.announcement .announcement-unit {
 
 main section.announcement .announcement-unit:last-child {
   margin-bottom: 0;
+}
+
+main section.manager table {
+  padding-top: 10px;
+  padding-bottom: 10px;
+  border-collapse: separate;
+  border-spacing: 2px;
+}
+
+main section.manager table thead {
+  font-size: 13px;
+}
+
+main section.manager table tbody tr:nth-child(even) td {
+  background-color: #F7F8FA;
 }
 
 main section.probe {

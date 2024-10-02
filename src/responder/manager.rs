@@ -72,6 +72,12 @@ pub fn run() {
                     .to(routes::reporter_flush),
             )
             .service(
+                web::resource("/manager")
+                    .wrap(middleware_manager_auth.clone())
+                    .guard(guard::Get())
+                    .to(routes::manager),
+            )
+            .service(
                 web::resource("/manager/announcements")
                     .wrap(middleware_manager_auth.clone())
                     .guard(guard::Get())

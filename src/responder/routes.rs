@@ -190,6 +190,28 @@ pub async fn reporter_flush(path: web::Path<(String, String, String)>) -> HttpRe
     }
 }
 
+// Notice: manager route is managed in manager due to authentication needs
+pub async fn manager(tera: Data<Tera>) -> HttpResponse {
+    // Notice acquire lock in a block to release it ASAP (ie. before template renders)
+    let context = {
+        IndexContext {
+            states: &PROBER_STORE.read().unwrap().states,
+            announcements: &ANNOUNCEMENTS_STORE.read().unwrap().announcements,
+            environment: &*INDEX_ENVIRONMENT,
+            config: &*INDEX_CONFIG,
+        }
+    };
+    let render = tera.render(
+        "manager.tera",
+        &tera::Context::from_serialize(context).unwrap(),
+    );
+    if let Ok(s) = render {
+        HttpResponse::Ok().content_type("text/html").body(s)
+    } else {
+        HttpResponse::InternalServerError().body(format!("Template Error {:?}", render))
+    }
+}
+
 // Notice: manager announcements route is managed in manager due to authentication needs
 pub async fn manager_announcements() -> HttpResponse {
     // List all announcements in store
