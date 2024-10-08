@@ -128,6 +128,21 @@ aside .separator {
   margin: 0 22px;
 }
 
+button .btn {
+  background-color: #04AA6D;
+  border: none;
+  color: white;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+}
+
+button .btn .danger {
+  background-color: #f44336;
+}
+
 main {
   padding: 38px 0 42px;
 }
@@ -261,11 +276,20 @@ main section.manager table {
   padding-top: 10px;
   padding-bottom: 10px;
   border-collapse: separate;
-  border-spacing: 2px;
+  border-spacing: 0;
+  border: none;
+  table-layout: auto;
+  width: 100%;
 }
 
 main section.manager table thead {
   font-size: 13px;
+}
+
+main section.manager table thead tr th {
+  padding: 4px 10px;
+  text-transform: uppercase;
+  border-bottom: solid 2px black;
 }
 
 main section.manager table tbody tr:nth-child(even) td {

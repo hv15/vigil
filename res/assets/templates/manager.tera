@@ -21,22 +21,39 @@
     <script src="/assets/javascripts/jquery-3.7.1.min.js" type="text/javascript"></script>
 
     <script type="text/javascript">
-      window.STATUS_GENERAL = "{{ states.status | escape }}";
+      window.STATUS_GENERAL = '{{ states.status | escape }}';
 
       $(document).ready(function() {
-        $('.delete-announcement-form').on("click", function(e) {
-            e.preventDefault();
-            var id = $('#id').val();
+        $('[id^=del_btn]').on('click', function(e) {
+            var id = $(this).attr('name');
             $.ajax({
                 type: 'DELETE',
-                url: '/delete/' + id,
+                url: '/manager/announcement/' + id,
+                success: (data) => {
+                  $(this).closest('tr').remove();
+                },
+                error: (err) => {
+                  console.log(err);
+                },
+            });
+        });
+        $('#new_anno_form').submit(function(e) {
+            e.preventDefault();
+            console.log(JSON.stringify($(this).serializeArray()));
+            $.ajax({
+                type: 'POST',
+                url: $(this).attr('action'),
+                contentType: 'application/json; charset=utf-8',
+                dataType: 'json',
+                data: JSON.stringify($(this).serializeArray()),
                 success: (data) => {
                   console.log(data);
                 },
                 error: (err) => {
-                  console.log(error);
-                });
+                  console.log(err);
+                },
             });
+        });
       });
     </script>
 
@@ -69,12 +86,11 @@
     </header>
 
     <main class="wrapper">
-      {% if announcements | length > 0 %}
       <section class="manager">
+        <h2>Announcments</h2>
         <table>
           <thead class="font-sans-semibold">
             <tr>
-              <th>ID</th>
               <th>Type</th>
               <th>Title</th>
               <th>Text</th>
@@ -84,20 +100,26 @@
           <tbody class="font-sans-regular">
             {% for announcement in announcements | reverse %}
             <tr>
-              <td>{{ announcement.id | escape }}</td>
-              <td>ID</td>
+              <td>N/a</td>
               <td>{{ announcement.title | escape }}</td>
               <td>{{ announcement.text | escape | linebreaksbr }}</td>
               <td>
-                <form class="delete-announcement-form" action="/manager/announcement/{{ announcement.id }}">
-                  <input type="submit" name="delete" value="Delete" />
-                </form>
+                <button id="del_btn_{{ loop.index0 }}" name="{{ announcement.id }}" class="btn danger">Delete</button>
               </td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
-      {% endif %}
+
+        <h2>Add Announcments</h2>
+        <form id="new_anno_form" action="/manager/announcement" method="post">
+          <label for="anno_title">Title:</label>
+          <input type="text" id="anno_title" name="title" required><br>
+          <label for="anno_text">Text:</label><br>
+          <textarea id="anno_text" name="text" required></textarea><br>
+          <input type="submit" value="Submit">
+        </form>
+      </section>
     </main>
 
     <footer class="wrapper">
