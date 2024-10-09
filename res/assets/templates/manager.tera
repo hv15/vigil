@@ -39,15 +39,20 @@
         });
         $('#new_anno_form').submit(function(e) {
             e.preventDefault();
-            console.log(JSON.stringify($(this).serializeArray()));
+            var unindexed_array = $(this).serializeArray();
+            var indexed_array = {};
+
+            $.map(unindexed_array, function(n, i){
+              indexed_array[n['name']] = n['value'];
+            });
             $.ajax({
                 type: 'POST',
                 url: $(this).attr('action'),
                 contentType: 'application/json; charset=utf-8',
                 dataType: 'json',
-                data: JSON.stringify($(this).serializeArray()),
+                data: JSON.stringify(indexed_array),
                 success: (data) => {
-                  console.log(data);
+                  location.reload(true);
                 },
                 error: (err) => {
                   console.log(err);
@@ -114,9 +119,9 @@
         <h2>Add Announcments</h2>
         <form id="new_anno_form" action="/manager/announcement" method="post">
           <label for="anno_title">Title:</label>
-          <input type="text" id="anno_title" name="title" required><br>
-          <label for="anno_text">Text:</label><br>
-          <textarea id="anno_text" name="text" required></textarea><br>
+          <textarea id="anno_title" name="title" placeholder="Some title..." required></textarea>
+          <label for="anno_text">Text:</label>
+          <textarea id="anno_text" name="text" placeholder="Some text..." required></textarea>
           <input type="submit" value="Submit">
         </form>
       </section>
