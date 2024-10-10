@@ -46,12 +46,12 @@ impl ConfigReader {
     }
 
     fn validate_identifiers(config: &Config) {
-        // Scan for service identifier duplicates
-        let mut service_identifiers = HashSet::new();
+        // Scan for identifier duplicates
+        let mut identifiers = HashSet::new();
 
-        for service in config.probe.service.iter() {
+        for service in config.probe.service.unwrap_or_else(Vec::new).iter() {
             // Service identifier was already previously inserted? (caught a duplicate)
-            if service_identifiers.insert(&service.id) == false {
+            if identifiers.insert(&service.id) == false {
                 panic!(
                     "configuration has duplicate service identifier: {}",
                     service.id
@@ -67,6 +67,32 @@ impl ConfigReader {
                     panic!(
                         "configuration has duplicate node identifier: {} in service: {}",
                         node.id, service.id
+                    )
+                }
+            }
+        }
+
+        // clear to check new identifiers
+        identifiers.clear();
+
+        for cluster in config.probe.cluster.unwrap_or_else(Vec::new).iter() {
+            // Cluster identifier was already previously inserted? (caught a duplicate)
+            if identifiers.insert(&cluster.id) == false {
+                panic!(
+                    "configuration has duplicate cluster identifier: {}",
+                    cluster.id
+                )
+            }
+
+            // Scan for node identifier duplicates
+            let mut node_identifiers = HashSet::new();
+
+            for node in cluster.node.iter() {
+                // Node identifier was already previously inserted? (caught a duplicate)
+                if node_identifiers.insert(&node.id) == false {
+                    panic!(
+                        "configuration has duplicate node identifier: {} in cluster: {}",
+                        node.id, cluster.id
                     )
                 }
             }

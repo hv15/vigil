@@ -280,7 +280,8 @@ pub struct ConfigNotifyWebHook {
 
 #[derive(Deserialize)]
 pub struct ConfigProbe {
-    pub service: Vec<ConfigProbeService>,
+    pub service: Option<Vec<ConfigProbeService>>,
+    pub cluster: Option<Vec<ConfigProbeCluster>>,
 }
 
 #[derive(Deserialize)]
@@ -288,6 +289,13 @@ pub struct ConfigProbeService {
     pub id: String,
     pub label: String,
     pub node: Vec<ConfigProbeServiceNode>,
+}
+
+#[derive(Deserialize)]
+pub struct ConfigProbeCluster {
+    pub id: String,
+    pub label: String,
+    pub node: Vec<ConfigProbeClusterNode>,
 }
 
 #[derive(Deserialize)]
@@ -308,6 +316,27 @@ pub struct ConfigProbeServiceNode {
 
     #[serde(default = "defaults::probe_service_node_reveal_replica_name")]
     pub reveal_replica_name: bool,
+
+    pub rabbitmq_queue: Option<String>,
+    pub rabbitmq_queue_nack_healthy_below: Option<u32>,
+    pub rabbitmq_queue_nack_dead_above: Option<u32>,
+}
+
+#[derive(Deserialize)]
+pub struct ConfigProbeClusterNode {
+    pub id: String,
+    pub label: String,
+    pub mode: Mode,
+    pub link: String,
+    pub scripts: Option<Vec<String>>,
+
+    #[serde(default)]
+    #[serde(with = "http_serde::header_map")]
+    pub http_headers: http::HeaderMap,
+
+    pub http_method: Option<ConfigProbeServiceNodeHTTPMethod>,
+    pub http_body: Option<String>,
+    pub http_body_healthy_match: Option<Regex>,
 
     pub rabbitmq_queue: Option<String>,
     pub rabbitmq_queue_nack_healthy_below: Option<u32>,
