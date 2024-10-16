@@ -298,14 +298,14 @@ pub struct ConfigProbeCluster {
     pub group: Vec<ConfigProbeClusterGroup>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 pub struct ConfigProbeClusterGroup {
     pub id: String,
     pub label: String,
     pub node: Vec<ConfigProbeClusterNode>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 pub struct ConfigProbeServiceNode {
     pub id: String,
     pub label: String,
@@ -329,7 +329,7 @@ pub struct ConfigProbeServiceNode {
     pub rabbitmq_queue_nack_dead_above: Option<u32>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 pub struct ConfigProbeClusterNode {
     pub id: String,
     pub label: String,

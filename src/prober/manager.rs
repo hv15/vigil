@@ -855,7 +855,12 @@ fn add_cluster_store(cluster: &ConfigProbeCluster) {
     // Copy monitored hosts in store (refactor the data structure)
     let mut store = STORE.write().unwrap();
 
+    // to store a mapping of group ids to labels
     let mut groups = IndexMap::new();
+
+    // sort the groups (and the nodes, later)
+    let mut sort_grp = cluster.group.to_vec();
+    sort_grp.sort_by(|a, b| a.id.cmp(&b.id));
 
     let mut probe = ServiceStatesProbe {
         id: cluster.id.to_owned(),
@@ -868,11 +873,13 @@ fn add_cluster_store(cluster: &ConfigProbeCluster) {
 
     debug!("prober store: got cluster {}", cluster.id);
 
-    for group in &cluster.group {
+    for mut group in sort_grp {
         debug!("prober store: got group {}:{}", cluster.id, group.id);
 
         // collect groups and labels
         groups.insert(group.id.to_owned(), group.label.to_owned());
+
+        group.node.sort_by(|a, b| a.label.cmp(&b.label));
 
         for node in &group.node {
             debug!("prober store: got node {}:{}:{}", cluster.id, group.id, node.id);
