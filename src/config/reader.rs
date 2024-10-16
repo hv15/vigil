@@ -49,7 +49,7 @@ impl ConfigReader {
         // Scan for identifier duplicates
         let mut identifiers = HashSet::new();
 
-        for service in config.probe.service.unwrap_or_else(Vec::new).iter() {
+        for service in config.probe.service.as_deref().unwrap_or_default().iter() {
             // Service identifier was already previously inserted? (caught a duplicate)
             if identifiers.insert(&service.id) == false {
                 panic!(
@@ -75,7 +75,7 @@ impl ConfigReader {
         // clear to check new identifiers
         identifiers.clear();
 
-        for cluster in config.probe.cluster.unwrap_or_else(Vec::new).iter() {
+        for cluster in config.probe.cluster.as_deref().unwrap_or_default().iter() {
             // Cluster identifier was already previously inserted? (caught a duplicate)
             if identifiers.insert(&cluster.id) == false {
                 panic!(
@@ -84,16 +84,26 @@ impl ConfigReader {
                 )
             }
 
-            // Scan for node identifier duplicates
+            // Scan for group and node identifier duplicates
+            let mut group_identifiers = HashSet::new();
             let mut node_identifiers = HashSet::new();
 
-            for node in cluster.node.iter() {
+            for group in cluster.group.iter() {
                 // Node identifier was already previously inserted? (caught a duplicate)
-                if node_identifiers.insert(&node.id) == false {
+                if group_identifiers.insert(&group.id) == false {
                     panic!(
-                        "configuration has duplicate node identifier: {} in cluster: {}",
-                        node.id, cluster.id
+                        "configuration has duplicate group identifier: {} in cluster: {}",
+                        group.id, cluster.id
                     )
+                }
+                for node in group.node.iter() {
+                    // Node identifier was already previously inserted? (caught a duplicate)
+                    if node_identifiers.insert(&node.id) == false {
+                        panic!(
+                            "configuration has duplicate node identifier: {} in group: {} from cluster: {}",
+                            node.id, group.id, cluster.id
+                        )
+                    }
                 }
             }
         }

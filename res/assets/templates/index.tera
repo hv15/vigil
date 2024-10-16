@@ -144,6 +144,83 @@
           </div>
 
           <ul>
+            {% if probe.kind == 'cluster' %}
+            {% for group_id, group_label in probe.groups %}
+              <li class="status-null-background-before">
+                <label class="font-sans-semibold status-null-background-subtle status-null-border-subtle">{{ group_label | escape }}</label>
+
+                <div class="node">
+                {% for _, node in probe.nodes %}
+                  {% if node.group_id == group_id %}
+                  {% for replica_id, replica in node.replicas %}
+                    <span class="replica status-{{ replica.status | escape }}-background has-tooltip font-sans-semibold">
+                      {{ node.label | escape }}
+
+                      <span class="tooltip">
+                        <span class="tooltip-value">
+                          <span class="tooltip-value-text">
+                            <span class="tooltip-main font-sans-semibold">
+                              {% if replica.status == "dead" %}
+                                This replica reports as dead.
+                              {% elif replica.status == "sick" %}
+                                This replica reports as sick.
+                              {% else %}
+                                This replica reports as healthy.
+                              {% endif %}
+                            </span>
+
+                            <span class="tooltip-label font-sans-light">
+                              {% if node.mode == "local" %}
+                                Checked via a local probe (internal).
+                              {% elif node.mode == "script" %}
+                                Checked via a script probe.
+                              {% elif node.mode == "push" %}
+                                Checked via a push probe (Reporter).
+                              {% else %}
+                                Checked via a poll probe (HTTP, TCP or ICMP).
+                              {% endif %}
+                            </span>
+                          </span>
+
+                          {% if node.reveal_replica_name %}
+                            <span class="tooltip-value-details font-sans-light">{{ replica_id }}</span>
+                          {% endif %}
+
+                          {% if replica.metrics.system or replica.metrics.latency or replica.metrics.latency == 0 or replica.metrics.rabbitmq %}
+                            <span class="tooltip-value-details">
+                              {% if replica.metrics.system %}
+                                <span class="tooltip-detail font-sans-regular">
+                                  <span class="tooltip-detail-label font-sans-semibold">Load</span>: {{ replica.metrics.system.cpu }}%
+                                </span>
+
+                                <span class="tooltip-detail font-sans-regular">
+                                  <span class="tooltip-detail-label font-sans-semibold">Memory</span>: {{ replica.metrics.system.ram }}%
+                                </span>
+                              {% endif %}
+
+                              {% if replica.metrics.latency or replica.metrics.latency == 0 %}
+                                <span class="tooltip-detail font-sans-regular">
+                                  <span class="tooltip-detail-label font-sans-semibold">Latency</span>: {{ replica.metrics.latency }}ms
+                                </span>
+                              {% endif %}
+
+                              {% if replica.metrics.rabbitmq %}
+                                <span class="tooltip-detail font-sans-regular">
+                                  <span class="tooltip-detail-label font-sans-semibold">Queue</span>: {{ replica.metrics.rabbitmq.queue_ready }}R {{ replica.metrics.rabbitmq.queue_nack }}N
+                                </span>
+                              {% endif %}
+                            </span>
+                          {% endif %}
+                        </span>
+                      </span>
+                    </span>
+                  {% endfor %}
+                  {% endif %}
+                {% endfor %}
+                </div>
+              </li>
+            {% endfor %}
+            {% elif probe.kind == 'service' %}
             {% for _, node in probe.nodes %}
               <li class="status-{{ node.status | escape }}-background-before">
                 <label class="font-sans-semibold status-{{ node.status | escape }}-background-subtle status-{{ node.status | escape }}-border-subtle">{{ node.label | escape }}</label>
@@ -215,6 +292,7 @@
                 </div>
               </li>
             {% endfor %}
+            {% endif %}
           </ul>
         </section>
       {% endfor %}

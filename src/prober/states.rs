@@ -11,6 +11,7 @@ use indexmap::IndexMap;
 use super::mode::Mode;
 use super::replica::ReplicaURL;
 use super::status::Status;
+use super::kind::Kind;
 use crate::config::{config::ConfigProbeServiceNodeHTTPMethod, regex::Regex};
 
 #[derive(Serialize)]
@@ -25,7 +26,9 @@ pub struct ServiceStates {
 pub struct ServiceStatesProbe {
     pub id: String,
     pub label: String,
+    pub kind: Kind,
     pub status: Status,
+    pub groups: Option<IndexMap<String, String>>,
     pub nodes: IndexMap<String, ServiceStatesProbeNode>,
 }
 
@@ -33,6 +36,7 @@ pub struct ServiceStatesProbe {
 pub struct ServiceStatesProbeNode {
     pub status: Status,
     pub label: String,
+    pub group_id: Option<String>,
     pub mode: Mode,
     pub replicas: IndexMap<String, ServiceStatesProbeNodeReplica>,
     #[serde(default)]

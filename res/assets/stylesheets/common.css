@@ -193,6 +193,31 @@ a:hover {
   pointer-events: auto;
 }
 
+.badge.badge-status-null.badge-default {
+  background-image: url("/assets/images/badges/icon-null-default.svg");
+}
+
+.badge.badge-status-null.badge-large {
+  background-image: url("/assets/images/badges/icon-null-large.svg");
+}
+
+.status-null-background,
+.status-null-background-before:before {
+  background-color: #0EB0B0;
+}
+
+.status-null-color {
+  color: #0EB0B0;
+}
+
+.status-null-background-subtle {
+  background-color: rgba(14, 176, 176, 0.10);
+}
+
+.status-null-border-subtle {
+  border-color: rgba(14, 176, 176, 0.17);
+}
+
 .badge.badge-status-healthy.badge-default {
   background-image: url("/assets/images/badges/icon-healthy-default.svg");
 }

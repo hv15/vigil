@@ -295,6 +295,13 @@ pub struct ConfigProbeService {
 pub struct ConfigProbeCluster {
     pub id: String,
     pub label: String,
+    pub group: Vec<ConfigProbeClusterGroup>,
+}
+
+#[derive(Deserialize)]
+pub struct ConfigProbeClusterGroup {
+    pub id: String,
+    pub label: String,
     pub node: Vec<ConfigProbeClusterNode>,
 }
 
@@ -327,7 +334,7 @@ pub struct ConfigProbeClusterNode {
     pub id: String,
     pub label: String,
     pub mode: Mode,
-    pub link: String,
+    pub url: Option<String>,
     pub scripts: Option<Vec<String>>,
 
     #[serde(default)]
