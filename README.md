@@ -328,17 +328,18 @@ You can also use environment variables with string interpolation in your configu
 
 **[probe]**
 
-**[[probe.service]]**
+**[[probe.service]]** and **[[probe.service.group]]**
 
 * `id` (type: _string_, allowed: any unique lowercase string, no default) — Unique identifier of the probed service (not visible on the status page)
 * `label` (type: _string_, allowed: any string, no default) — Name of the probed service (visible on the status page)
 
-**[[probe.service.node]]**
+**[[probe.service.node]]** and **[[probe.service.group.node]]**
 
 * `id` (type: _string_, allowed: any unique lowercase string, no default) — Unique identifier of the probed service node (not visible on the status page)
 * `label` (type: _string_, allowed: any string, no default) — Name of the probed service node (visible on the status page)
 * `mode` (type: _string_, allowed: `poll`, `push`, `script`, `local`, no default) — Probe mode for this node (ie. `poll` is direct HTTP, TCP or ICMP poll to the URLs set in `replicas`, while `push` is for Vigil Reporter nodes, `script` is used to execute a shell script and `local` is for Vigil Local nodes)
 * `replicas` (type: _array[string]_, allowed: TCP, ICMP or HTTP URLs, default: empty) — Node replica URLs to be probed (only used if `mode` is `poll`)
+* `url` (type: _string_, allowed: TCP, ICMP or HTTP URLs, default: empty) - Single Node URL to be probed (only used within the `group.node` spec and when `mode` is `poll`)
 * `scripts` (type: _array[string]_, allowed: shell scripts as source code, default: empty) — Shell scripts to be executed on the system as a Vigil sub-process; they are handy to build custom probes (only used if `mode` is `script`)
 * `http_headers` (type: _map[string, string]_, allowed: any valid header name and value, default: empty) — HTTP headers to add to HTTP requests (eg. `http_headers = { "Authorization" = "Bearer xxxx" }`)
 * `http_method` (type _string_, allowed: `GET`, `HEAD`, `POST`, `PUT`, `PATCH`, no default) — HTTP method to use when polling the endpoint (omitting this will default to using `HEAD` or `GET` depending on the `http_body_healthy_match` configuration value)
