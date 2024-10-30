@@ -144,7 +144,7 @@
           </div>
 
           <ul>
-            {% if probe.kind == 'cluster' %}
+            {% if probe.groups %}
             {% for group_id, group_label in probe.groups %}
               <li class="status-null-background-before">
                 <label class="font-sans-semibold status-null-background-subtle status-null-border-subtle">{{ group_label | escape }}</label>
@@ -220,8 +220,9 @@
                 </div>
               </li>
             {% endfor %}
-            {% elif probe.kind == 'service' %}
+            {% endif %}
             {% for _, node in probe.nodes %}
+              {% if not node.group_id %}
               <li class="status-{{ node.status | escape }}-background-before">
                 <label class="font-sans-semibold status-{{ node.status | escape }}-background-subtle status-{{ node.status | escape }}-border-subtle">{{ node.label | escape }}</label>
 
@@ -291,8 +292,8 @@
                   {% endfor %}
                 </div>
               </li>
+              {% endif %}
             {% endfor %}
-            {% endif %}
           </ul>
         </section>
       {% endfor %}

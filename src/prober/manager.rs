@@ -27,7 +27,6 @@ use super::states::{
     ServiceStatesProbeNodeReplicaMetrics, ServiceStatesProbeNodeReplicaMetricsRabbitMQ,
 };
 use super::status::Status;
-use super::kind::Kind;
 use crate::config::config::{
     ConfigProbeService, ConfigProbeServiceNode,
     ConfigPluginsRabbitMQ, ConfigProbeServiceNodeHTTPMethod,
@@ -974,7 +973,6 @@ fn add_service_store(service: &ConfigProbeService) {
     let mut probe = ServiceStatesProbe {
         id: service.id.to_owned(),
         label: service.label.to_owned(),
-        kind: Kind::Service,
         status: Status::Healthy,
         groups: None, // we insert this later
         nodes: IndexMap::new(),

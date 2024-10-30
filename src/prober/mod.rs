@@ -6,7 +6,6 @@
 
 mod replica;
 
-pub mod kind;
 pub mod manager;
 pub mod mode;
 pub mod report;
