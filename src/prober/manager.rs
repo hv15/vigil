@@ -27,7 +27,10 @@ use super::states::{
     ServiceStatesProbeNodeReplicaMetrics, ServiceStatesProbeNodeReplicaMetricsRabbitMQ,
 };
 use super::status::Status;
-use crate::config::config::{ConfigPluginsRabbitMQ, ConfigProbeServiceNodeHTTPMethod};
+use crate::config::config::{
+    ConfigProbeService, ConfigProbeServiceNode,
+    ConfigPluginsRabbitMQ, ConfigProbeServiceNodeHTTPMethod,
+};
 use crate::config::regex::Regex;
 use crate::prober::manager::STORE as PROBER_STORE;
 use crate::prober::mode::Mode;
@@ -847,103 +850,178 @@ pub fn run_dispatch_plugins(
     }
 }
 
-pub fn initialize_store() {
+fn add_service_node(
+    node: &ConfigProbeServiceNode,
+    service_id: &String,
+    group_id: Option<String>,
+) -> ServiceStatesProbeNode {
+    let mut probe_node = ServiceStatesProbeNode {
+        status: Status::Healthy,
+        label: node.label.to_owned(),
+        group_id: group_id,
+        mode: node.mode.to_owned(),
+        replicas: IndexMap::new(),
+        http_headers: node.http_headers.to_owned(),
+        http_method: node.http_method.to_owned(),
+        http_body: node.http_body.to_owned(),
+        http_body_healthy_match: node.http_body_healthy_match.to_owned(),
+        reveal_replica_name: node.reveal_replica_name,
+        rabbitmq: node.rabbitmq_queue.as_ref().map(|queue| {
+            ServiceStatesProbeNodeRabbitMQ {
+                queue: queue.to_owned(),
+                queue_nack_healthy_below: node.rabbitmq_queue_nack_healthy_below,
+                queue_nack_dead_above: node.rabbitmq_queue_nack_dead_above,
+            }
+        }),
+    };
+
+    // Node with replicas? (might be a poll node)
+    if let Some(ref replicas) = node.replicas {
+        if node.mode != Mode::Poll {
+            panic!("non-poll node cannot have replicas");
+        }
+
+        for replica in replicas {
+            debug!(
+                "prober store: got replica {}:{}:{}",
+                service_id, node.id, replica
+            );
+
+            let replica_url = ReplicaURL::parse_from(replica).expect("invalid replica url");
+
+            probe_node.replicas.insert(
+                replica.to_string(),
+                ServiceStatesProbeNodeReplica {
+                    status: Status::Healthy,
+                    url: Some(replica_url),
+                    script: None,
+                    metrics: ServiceStatesProbeNodeReplicaMetrics::default(),
+                    load: None,
+                    report: None,
+                },
+            );
+        }
+    }
+
+    // Node with strict url? (is a group node, will be polled)
+    if let Some(ref url) = node.url {
+        if node.mode != Mode::Poll {
+            panic!("non-poll node cannot have a url");
+        }
+
+        debug!(
+            "prober store: got url {}:{}:{}",
+            service_id, node.id, url
+        );
+
+        let replica_url = ReplicaURL::parse_from(url).expect("invalid url");
+
+        probe_node.replicas.insert(
+            url.to_string(),
+            ServiceStatesProbeNodeReplica {
+                status: Status::Healthy,
+                url: Some(replica_url),
+                script: None,
+                metrics: ServiceStatesProbeNodeReplicaMetrics::default(),
+                load: None,
+                report: None,
+            },
+        );
+    }
+
+    // Node with scripts? (might be a script node)
+    if let Some(ref scripts) = node.scripts {
+        if node.mode != Mode::Script {
+            panic!("non-script node cannot have scripts");
+        }
+
+        for (index, script) in scripts.iter().enumerate() {
+            debug!(
+                "prober store: got script {}:{}:#{}",
+                service_id, node.id, index
+            );
+
+            probe_node.replicas.insert(
+                index.to_string(),
+                ServiceStatesProbeNodeReplica {
+                    status: Status::Healthy,
+                    url: None,
+                    script: Some(script.to_owned()),
+                    metrics: ServiceStatesProbeNodeReplicaMetrics::default(),
+                    load: None,
+                    report: None,
+                },
+            );
+        }
+    }
+
+    probe_node
+}
+
+fn add_service_store(service: &ConfigProbeService) {
     // Copy monitored hosts in store (refactor the data structure)
     let mut store = STORE.write().unwrap();
+    
+    // to store a mapping of group ids to labels
+    //let mut nodes_iter = cluster.service.iter().chain(cluster.service.group.as_deref().unwrap_or_default().iter())
+    let mut groupmap = IndexMap::new();
 
-    for service in &APP_CONF.probe.service {
-        let mut probe = ServiceStatesProbe {
-            id: service.id.to_owned(),
-            label: service.label.to_owned(),
-            status: Status::Healthy,
-            nodes: IndexMap::new(),
-        };
+    // sort the groups (and the nodes, later)
+    //let mut sort_grp = cluster.group.to_vec();
+    //sort_grp.sort_by(|a, b| a.id.cmp(&b.id));
 
-        debug!("prober store: got service {}", service.id);
+    let mut probe = ServiceStatesProbe {
+        id: service.id.to_owned(),
+        label: service.label.to_owned(),
+        status: Status::Healthy,
+        groups: None, // we insert this later
+        nodes: IndexMap::new(),
+    };
 
-        for node in &service.node {
+    debug!("prober store: got service {}", service.id);
+
+    if let Some(ref nodes) = service.node {
+        for node in nodes {
             debug!("prober store: got node {}:{}", service.id, node.id);
-
-            let mut probe_node = ServiceStatesProbeNode {
-                status: Status::Healthy,
-                label: node.label.to_owned(),
-                mode: node.mode.to_owned(),
-                replicas: IndexMap::new(),
-                http_headers: node.http_headers.to_owned(),
-                http_method: node.http_method.to_owned(),
-                http_body: node.http_body.to_owned(),
-                http_body_healthy_match: node.http_body_healthy_match.to_owned(),
-                reveal_replica_name: node.reveal_replica_name,
-                rabbitmq: node.rabbitmq_queue.as_ref().map(|queue| {
-                    ServiceStatesProbeNodeRabbitMQ {
-                        queue: queue.to_owned(),
-                        queue_nack_healthy_below: node.rabbitmq_queue_nack_healthy_below,
-                        queue_nack_dead_above: node.rabbitmq_queue_nack_dead_above,
-                    }
-                }),
-            };
-
-            // Node with replicas? (might be a poll node)
-            if let Some(ref replicas) = node.replicas {
-                if node.mode != Mode::Poll {
-                    panic!("non-poll node cannot have replicas");
-                }
-
-                for replica in replicas {
-                    debug!(
-                        "prober store: got replica {}:{}:{}",
-                        service.id, node.id, replica
-                    );
-
-                    let replica_url = ReplicaURL::parse_from(replica).expect("invalid replica url");
-
-                    probe_node.replicas.insert(
-                        replica.to_string(),
-                        ServiceStatesProbeNodeReplica {
-                            status: Status::Healthy,
-                            url: Some(replica_url),
-                            script: None,
-                            metrics: ServiceStatesProbeNodeReplicaMetrics::default(),
-                            load: None,
-                            report: None,
-                        },
-                    );
-                }
-            }
-
-            // Node with scripts? (might be a script node)
-            if let Some(ref scripts) = node.scripts {
-                if node.mode != Mode::Script {
-                    panic!("non-script node cannot have scripts");
-                }
-
-                for (index, script) in scripts.iter().enumerate() {
-                    debug!(
-                        "prober store: got script {}:{}:#{}",
-                        service.id, node.id, index
-                    );
-
-                    probe_node.replicas.insert(
-                        index.to_string(),
-                        ServiceStatesProbeNodeReplica {
-                            status: Status::Healthy,
-                            url: None,
-                            script: Some(script.to_owned()),
-                            metrics: ServiceStatesProbeNodeReplicaMetrics::default(),
-                            load: None,
-                            report: None,
-                        },
-                    );
-                }
-            }
+            
+            let probe_node = add_service_node(&node, &service.id, None);
 
             probe.nodes.insert(node.id.to_owned(), probe_node);
         }
-
-        store.states.probes.insert(service.id.to_owned(), probe);
     }
+    
+    if let Some(ref groups) = service.group {
+        for group in groups {
+            debug!("prober store: got group {}:{}", service.id, group.id);
+        //for mut group in sort_grp {
 
-    info!("initialized prober store");
+            // collect groups and labels
+            groupmap.insert(group.id.to_owned(), group.label.to_owned());
+
+            for node in &group.node {
+                let probe_node = add_service_node(&node, &service.id, Some(group.id.to_owned()));
+                probe.nodes.insert(node.id.to_owned(), probe_node);
+            }
+
+        //    group.node.sort_by(|a, b| a.label.cmp(&b.label));
+        }
+    }
+   
+    if ! groupmap.is_empty() {
+        probe.groups = Some(groupmap);
+    }
+    store.states.probes.insert(service.id.to_owned(), probe);
+}
+
+pub fn initialize_store() {
+    if ! APP_CONF.probe.service.is_empty() {
+        for service in &APP_CONF.probe.service {
+            add_service_store(service)
+        }
+        info!("initialized prober service store");
+    } else {
+        info!("Skipped prober service store; no services defined");
+    }
 }
 
 pub fn run_poll() {

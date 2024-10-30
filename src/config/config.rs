@@ -287,14 +287,23 @@ pub struct ConfigProbe {
 pub struct ConfigProbeService {
     pub id: String,
     pub label: String,
+    pub node: Option<Vec<ConfigProbeServiceNode>>,
+    pub group: Option<Vec<ConfigProbeServiceGroup>>,
+}
+
+#[derive(Deserialize, Clone)]
+pub struct ConfigProbeServiceGroup {
+    pub id: String,
+    pub label: String,
     pub node: Vec<ConfigProbeServiceNode>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 pub struct ConfigProbeServiceNode {
     pub id: String,
     pub label: String,
     pub mode: Mode,
+    pub url: Option<String>,
     pub replicas: Option<Vec<String>>,
     pub scripts: Option<Vec<String>>,
 

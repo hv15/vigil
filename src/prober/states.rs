@@ -26,6 +26,7 @@ pub struct ServiceStatesProbe {
     pub id: String,
     pub label: String,
     pub status: Status,
+    pub groups: Option<IndexMap<String, String>>,
     pub nodes: IndexMap<String, ServiceStatesProbeNode>,
 }
 
@@ -33,6 +34,7 @@ pub struct ServiceStatesProbe {
 pub struct ServiceStatesProbeNode {
     pub status: Status,
     pub label: String,
+    pub group_id: Option<String>,
     pub mode: Mode,
     pub replicas: IndexMap<String, ServiceStatesProbeNodeReplica>,
     #[serde(default)]

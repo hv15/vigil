@@ -46,28 +46,51 @@ impl ConfigReader {
     }
 
     fn validate_identifiers(config: &Config) {
-        // Scan for service identifier duplicates
-        let mut service_identifiers = HashSet::new();
+        // Scan for identifier duplicates
+        let mut identifiers = HashSet::new();
+        let mut sub_identifiers = HashSet::new();
 
         for service in config.probe.service.iter() {
             // Service identifier was already previously inserted? (caught a duplicate)
-            if service_identifiers.insert(&service.id) == false {
+            if identifiers.insert(&service.id) == false {
                 panic!(
                     "configuration has duplicate service identifier: {}",
                     service.id
                 )
             }
 
-            // Scan for node identifier duplicates
-            let mut node_identifiers = HashSet::new();
-
-            for node in service.node.iter() {
+            for node in service.node.as_deref().unwrap_or_default().iter() {
                 // Node identifier was already previously inserted? (caught a duplicate)
-                if node_identifiers.insert(&node.id) == false {
+                if sub_identifiers.insert(&node.id) == false {
                     panic!(
                         "configuration has duplicate node identifier: {} in service: {}",
                         node.id, service.id
                     )
+                }
+            }
+
+            sub_identifiers.clear();
+
+            for group in service.group.as_deref().unwrap_or_default().iter() {
+                // Group identifier was already previously inserted? (caught a duplicate)
+                if sub_identifiers.insert(&group.id) == false {
+                    panic!(
+                        "configuration has duplicate group identifier: {} in service: {}",
+                        group.id, service.id
+                    )
+                }
+            }
+
+            sub_identifiers.clear();
+            for group in service.group.as_deref().unwrap_or_default().iter() {
+                for node in group.node.iter() {
+                    // Node identifier was already previously inserted? (caught a duplicate)
+                    if sub_identifiers.insert(&node.id) == false {
+                        panic!(
+                            "configuration has duplicate node identifier: {} in group: {} in service: {}",
+                            node.id, group.id, service.id
+                        )
+                    }
                 }
             }
         }
